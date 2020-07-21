@@ -59,7 +59,7 @@ Get access to OISP Platform Dashboard.
 
 ## Getting started
 1. Clone this repository under your gateway.
-2. gatewaydeployment.yaml is the sample gateway device onboarding config repo description file.
+2. Browse to the `oisp-iot-agent/container/kubernetes/onboarding/` directory.
 3. Copy default config.json from IndustryFusion-private- git repository. This will set hosts for rest, ws and mqtt correctly 
    for OISP Platform DashBoard.
 4. Create app_config.yaml which should consist of OISP Instance URL and APP Version.
@@ -68,8 +68,8 @@ Sample app_config.yaml description:
 BASE_OISP_INSTANCE: <OISP_BASE_URL>
 API_VERSION:   <vX/api>
 ```
-5. Create gatewaydeployment.yaml which should consist of Application Name, Deployment Config, Machine Config details for this framework 
-   to parse and deploy the devices you want to onboard connected to your gateway. 
+5. Create gatewaydeployment.yaml which should consist of Application Name, Deployment Config, 
+   Machine Config details for this framework to parse and deploy the devices you want to onboard connected to your gateway. 
 Sample gatewaydeployment.yaml description:
 ```
 version: <DEPLOYMENT_YAML_VERSION_NUMBER>
@@ -89,15 +89,15 @@ CreateDeployments:
 ```
 6. Initiate the Deployment process based on three actions; create, update or delete.
 ```
-python3 deviceonboarding.py --action create 
-OR 
-python3 deviceonboarding.py --action update
-OR 
-python3 deviceonboarding.py --action delete
+python3 deviceonboarding.py --action create --deployfilepath gatewaydeployment.yaml
+===================================================================================
+python3 deviceonboarding.py --action update --deployfilepath gatewaydeployment.yaml
+===================================================================================
+python3 deviceonboarding.py --action delete --deployfilepath gatewaydeployment.yaml
 ```
 7. Once the onboarding script it initiated it will ask you for OISP platform credentials.
 ```
-Gateway:~/tools $python3 deviceonboarding.py --action delete
+Gateway:~/tools $python3 deviceonboarding.py --action delete --deployfilepath gatewaydeployment.yaml
 Deleting Pods....
 Enter OISP User Credentials
 Username: xxxx.xx@abc.com

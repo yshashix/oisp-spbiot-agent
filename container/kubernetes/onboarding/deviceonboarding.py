@@ -28,7 +28,6 @@
 
 import sys
 import os.path
-import glob
 import argparse
 import subprocess
 import shutil
@@ -114,6 +113,13 @@ def git_clone_tempdir(git_url, git_dir, git_tag,
                     os.path.join(appname_dir, 'application.yaml'))
     # Remove temporary dir
     shutil.rmtree(tempdir)
+
+
+def file_path(filepath):
+    """Check onboarding yaml file exists."""
+    if not os.path.isfile(filepath):
+        return "Gateway Deployment yaml File Path Not Found."
+    return filepath
 
 
 def get_current_directory():
@@ -348,8 +354,8 @@ class DeviceDeployment:
 
     def __init__(self, file):
 
-        with open(file, 'r') as deploymentfile:
-            self.params = yaml.safe_load(deploymentfile)
+        with open(file, 'r') as deployment_file:
+            self.params = yaml.safe_load(deployment_file)
         global NAME_SPACE
         NAME_SPACE = self.params['namespace']
 
@@ -371,18 +377,22 @@ class DeviceDeployment:
 
 if __name__ == "__main__":
     directory = get_current_directory()
-    # Find deployment("XYZ.yaml") file in a directory
-    files = glob.glob(os.path.join(directory, '*.yaml'))
-    deploymentstate = DeviceDeployment(files[0])
     # Input argument parser for performing creation,updation or deletion
-    # of device deployment and machine config
+    # of device deployment and machine config with correct gateway
+    # deployment yaml file path.
     parser = argparse.ArgumentParser(
         description='Automating Gateway Device OnBoarding Script!')
     parser.add_argument(
-        "--action", choices=["create", "update", "delete"],
+        "--action", '-a', choices=["create", "update", "delete"],
         required=True, type=str, help="create")
+    parser.add_argument('-d', '--deployfilepath', required=True,
+                        help='gatewaydeployment.yaml', type=file_path)
     args = parser.parse_args()
     action = args.action
+    deploymentfile = args.deployfilepath
+
+    # Pass the deployment("XYZ.yaml") filepath
+    deploymentstate = DeviceDeployment(deploymentfile)
 
     # Deployment class object instance based on input argument to script.
     if action == "delete":
