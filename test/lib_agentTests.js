@@ -27,17 +27,21 @@ process.env.NODE_ENV = 'test';
 var assert = require('assert'),
     sinon = require('sinon'),
     rewire = require('rewire'),
+    rewiremock = require('rewiremock/node'),
     fake_common = require('./fakecommon.js'),
-    schemaValidation = require('../lib/schema-validator'),
-    configurator_test = rewire("../admin/configurator.js");
+    schemaValidation = require('../lib/schema-validator');
 var sinonTestFactory = require('sinon-test');
 var sinonTest = sinonTestFactory(sinon);
 
-var logger = {
+rewiremock.overrideEntryPoint(module);
+module.exports = rewiremock;
+
+var loggerTest = {
     log: function() {},
     info: function() {},
     error: function() {},
-    debug: function() {}
+    debug: function() {},
+    init: function() {}
 };
 
 var fakepath = {
@@ -48,7 +52,7 @@ var fakepath = {
 describe('oisp-agent/lib/utils', function() {
     var systemos = require("os");
     var toTest = rewire("../lib/utils.js");
-    toTest.__set__("logger", logger);
+    toTest.__set__("logger", loggerTest);
     toTest.__set__("common", fakeCommon);
     toTest.__set__("config", Testvalue.config);
     var iotkitutils = toTest.__get__("IoTKitUtils");
@@ -115,7 +119,6 @@ describe('oisp-agent/lib/utils', function() {
     it('should return agents attribute', function(done) {
         var agentattr = iotkitutils.prototype.getAgentAttr();
         assert(agentattr, 'agents attribute is null');
-        //console.log(agentattr);
         done();
     });
 
@@ -160,26 +163,30 @@ describe('oisp-agent/lib/utils', function() {
 });
 
 describe('oisp-agent/admin/configurator', function() {
-    configurator_test.__set__("common", fakeCommon);
-    configurator_test.__set__("logger", logger);
-    configurator_test.__set__("config", Testvalue.config);
+    rewiremock(() => require('../lib/common')).with(fakeCommon);
+    rewiremock(() => require('../config')).with(Testvalue.config);
+    rewiremock(() => require('../lib/logger')).with(loggerTest);
 
-    it('should set and get last actuations pull time', sinonTest(function(done) {
-        var setlastactuationspulltime = configurator_test.__get__("setLastActuationsPullTime");
-        setlastactuationspulltime('lasttime');
+    rewiremock.enable();
+
+    configurator_test = require('../admin/configurator');
+
+    it('should set and get last actuations pull time', function(done) {
+        configurator_test.setLastActuationsPullTime('lasttime');
         assert.equal(testdeviceConfig.last_actuations_pull_time, 'lasttime');
         done();
-    }));
+    });
 
     it('should generate a valid gatewayId', function(done) {
-        var getgatewayid = configurator_test.__get__("getGatewayId");
-        getgatewayid(function(id) {
+        configurator_test.getGatewayId(function(id) {
             assert(id, 'id is null');
             assert.notEqual(id, '');
             this.gatewayId = id;
             done();
         });
     });
+
+    rewiremock.disable();
 });
 
 describe('oisp-agent/lib/schemaValidation', function() {

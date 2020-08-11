@@ -39,7 +39,8 @@ global.Testvalue = {
     last_actuations_pull_time: '',
     config: {
         default_connector: "rest+ws",
-        data_directory: "./data/",
+        data_directory: "./data",
+        connector: { rest: "", ws: "" },
         thekey: "thevalue",
         null: ''
     },

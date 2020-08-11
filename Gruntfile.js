@@ -36,19 +36,12 @@ module.exports = function(grunt) {
                       'lib/**/*.js',
                       'listeners/**/*.js'
             ],
-            testfiles: ['test/*.js']
         },
         eslint: {
             local: {
                 src: ['<%= dirs.jsfiles %>'],
                 options: {
-                    configFile: '<%= dirs.eslint %>/config.json'
-                }
-            },
-            tests: {
-                src: ['<%= dirs.testfiles %>'],
-                options: {
-                    configFile: '<%= dirs.eslint %>/test-config.json'
+                    configFile: '<%= dirs.eslint %>/config.json',
                 }
             }
         },
@@ -69,9 +62,9 @@ module.exports = function(grunt) {
         }
     });
 
-    grunt.loadNpmTasks('gruntify-eslint');
+    grunt.loadNpmTasks('grunt-eslint');
     grunt.loadNpmTasks('grunt-simple-nyc');
 
     // Default task(s).
-    grunt.registerTask('default', ['eslint:local', 'eslint:tests', 'nyc:all']);
+    grunt.registerTask('default', ['eslint:local', 'nyc:all']);
 }

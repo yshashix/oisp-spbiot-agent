@@ -149,7 +149,7 @@ describe(fileToTest, function() {
 
         });
     });
-    describe(" Store Intreface ", function () {
+    describe(" Store Interface ", function () {
         var myComm;
         var toTest= null;
         var storeName = "deviceTest.json";
