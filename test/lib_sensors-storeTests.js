@@ -24,7 +24,8 @@
 
 var path = require('path'),
     assert =  require('chai').assert,
-    rewire = require('rewire');
+    rewiremock = require('rewiremock/node');
+
 var fileToTest = "../lib/sensors-store.js";
 
 describe(fileToTest, function() {
@@ -37,14 +38,17 @@ describe(fileToTest, function() {
         console.log(arguments);
     };
 
-    describe("Stora shall Read/Write from source", function () {
+    describe("Store shall Read/Write from source", function () {
         var common = {
             readFileToJson : function () {},
             writeToJson: function() {}
         };
         var toTest;
         before(function(done) {
-            toTest = rewire(fileToTest);
+            rewiremock(() => require('../lib/common')).with(common);
+            rewiremock.enable();
+            toTest = require(fileToTest);
+            rewiremock.disable();
             done();
         });
         after(function (done) {
@@ -86,7 +90,6 @@ describe(fileToTest, function() {
                 return dataFile;
             };
 
-            toTest.__set__("common", common);
             var store = toTest.init(storeName, logger);
             assert.lengthOf(store.data, dataFile['sensor_list'].length, "The Data load is not the same");
             assert.deepEqual(store.data, dataFile['sensor_list'], "The Data store are missing data");
@@ -100,7 +103,6 @@ describe(fileToTest, function() {
                 assert.include(fullPath, str, "The store Name and Data is not include");
                 return null;
             };
-            toTest.__set__("common", common);
             var store = toTest.init(storeName, logger);
             assert.lengthOf(store.data, 0, "None data shall at data store");
             done();
@@ -133,7 +135,6 @@ describe(fileToTest, function() {
                 checkArray(dataToSave);
                 return null;
             };
-            toTest.__set__("common", common);
             var store = toTest.init(storeName, logger);
             assert.lengthOf(store.data, 0, "None data shall at data store");
             for (var i = 0; i < 100; i++) {
@@ -154,7 +155,7 @@ describe(fileToTest, function() {
         var toTest= null;
         var storeName = "deviceTest.json";
         before(function(done) {
-            toTest = rewire(fileToTest);
+            toTest = require(fileToTest);
             myComm = require('../lib/common');
             var dataFile = {
                 "activation_retries": 10,
@@ -177,6 +178,7 @@ describe(fileToTest, function() {
 
 
             var f = path.join(__dirname, '../data/' + storeName);
+            myComm.initializeDataDirectory();
             myComm.writeToJson(f, dataFile);
 
             myComm.getDeviceConfig = function() {

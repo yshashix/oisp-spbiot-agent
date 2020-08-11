@@ -33,9 +33,6 @@ var assert = require('assert'),
 var sinonTestFactory = require('sinon-test');
 var sinonTest = sinonTestFactory(sinon);
 
-rewiremock.overrideEntryPoint(module);
-module.exports = rewiremock;
-
 var loggerTest = {
     log: function() {},
     info: function() {},
@@ -168,8 +165,8 @@ describe('oisp-agent/admin/configurator', function() {
     rewiremock(() => require('../lib/logger')).with(loggerTest);
 
     rewiremock.enable();
-
     configurator_test = require('../admin/configurator');
+    rewiremock.disable();
 
     it('should set and get last actuations pull time', function(done) {
         configurator_test.setLastActuationsPullTime('lasttime');
@@ -185,8 +182,6 @@ describe('oisp-agent/admin/configurator', function() {
             done();
         });
     });
-
-    rewiremock.disable();
 });
 
 describe('oisp-agent/lib/schemaValidation', function() {
