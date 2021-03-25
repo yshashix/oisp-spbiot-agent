@@ -38,7 +38,6 @@ var component = process.argv[2];
 var value     = process.argv[3];
 var data = "{\"n\": \"" + component + "\", \"v\": \"" + value + "\"}";
 
-//console.log(data);
 // Send UDP message to local agent
 var dgram = require('dgram');
 var message = new Buffer(data);
