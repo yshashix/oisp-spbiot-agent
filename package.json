@@ -1,6 +1,6 @@
 {
   "name": "@open-iot-service-platform/oisp-iot-agent",
-  "version": "2.1.3",
+  "version": "2.2.0",
   "description": "OISP IoT agent for devices",
   "main": "server.js",
   "bin": {
