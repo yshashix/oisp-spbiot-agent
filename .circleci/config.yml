@@ -156,7 +156,7 @@ jobs:
     executor: vm-executor
     steps:
       - checkout-e2e:
-          oisp-git-hash: "439b491feeb51ecf00d65f074cb3eb3f5c937963"
+          oisp-git-hash: "f3b5b8e9c902e289e4e5933121b3d0306588e366"
       - checkout-testbranch:
           repo: "oisp-iot-agent"
       - setup-build-environment
