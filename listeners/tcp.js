@@ -22,8 +22,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-var net = require('net'),
-    JsonSocket = require('json-socket');
+var net = require('net');
 
 exports.init = function(conf, logger, onMessage) {
 
@@ -32,7 +31,6 @@ exports.init = function(conf, logger, onMessage) {
 
     function processMessage(data) {
         try {
-            logger.debug("Message to process:" + JSON.stringify(data));
             onMessage(data);
         } catch (ex) {
             logger.error('TCP Error on message: %s', ex.message);
@@ -46,14 +44,14 @@ exports.init = function(conf, logger, onMessage) {
     server.on('connection', function(socket) {
         logger.debug('TCP connection from %s:%d', socket.remoteAddress, socket.remotePort);
         if(socket.remoteAddress !== "127.0.0.1") {
-            logger.debug("Ignoring remote message from %s", socket.remoteAddress);
+            logger.debug("Ignoring remote connection from %s", socket.remoteAddress);
             return;
         }
 
-        socket = new JsonSocket(socket);
-        socket.on('message', function(message) {
-            logger.debug("Data arrived: " + JSON.stringify(message));
-            processMessage(message);
+        socket.on('data', function(msg) {
+            var data = JSON.parse(msg);
+            logger.debug("Data arrived: " + JSON.stringify(data));
+            processMessage(data);
         });
     });
 
