@@ -12,6 +12,10 @@ This is a "agent" program intended to run as a service. You can send a very simp
 ```
 {"n": "temp", "v": 26.9}
 ```
+or an array like this:
+```
+[{"n": "temp", "v": 26.9, "t": 1618325707931},{"n": "temp", "v": 27.2, "t": 1618325787105}]
+```
 
 to a UDP socket on port 41234. The agent will add the security token, add a time stamp, convert "temp" to the component (time series) ID, and send a POST over SSL to an OISP instance.
 
