@@ -7,17 +7,19 @@ This project consists of two components:
 This is a command line "wrapper" for the [REST API](https://github.com/Open-IoT-Service-Platform/platform-launcher/wiki/REST-API), enabling you to test connectivity, activate a device, register time series and send observations all from the command line.
 
 ### oisp-agent
-This is a "agent" program intended to run as a service. You can send a very simple message, such as:
-
+This is a "agent" program intended to run as a service. You can send a very simple message, such as
 ```
 {"n": "temp", "v": 26.9}
 ```
-or an array like this:
+or an array like this
 ```
 [{"n": "temp", "v": 26.9, "t": 1618325707931},{"n": "temp", "v": 27.2, "t": 1618325787105}]
 ```
-
-to a UDP socket on port 41234. The agent will add the security token, add a time stamp, convert "temp" to the component (time series) ID, and send a POST over SSL to an OISP instance.
+or a component registration
+```
+{"n": "temp", "t": "temperature.v1.0"}
+```
+to a UDP socket on port 41234 or TCP socket on port 7070. The agent will add the security token, add a time stamp, convert "temp" to the component (time series) ID, and send a POST over SSL to an OISP instance.
 
 ## Installing using git
 ``` bash
@@ -68,6 +70,12 @@ e.g.
 ./oisp-admin.js register temp temperature.v1.0
 ```
 
+You can also register a component by sending
+```
+{"n": "temp", "t": "temperature.v1.0"}
+```
+to a UDP socket on port 41234 or TCP socket on port 7070.
+
 #### Sending Metrics
 
 After that, values for the component _temp_ can be sent by either the _oisp-admin_ to test, e.g.
@@ -75,11 +83,15 @@ After that, values for the component _temp_ can be sent by either the _oisp-admi
 ./oisp-admin.js observation temp 22.1
 ```
 
-or when the oisp-agent is launched, by sending
+or when the oisp-agent is running by sending
 ```
-{"n": "temp", "v": 22.1}
+{"n": "temp", "v": 26.9}
 ```
-to a UDP socket on port 41234.
+or an array like this
+```
+[{"n": "temp", "v": 26.9, "t": 1618325707931},{"n": "temp", "v": 27.2, "t": 1618325787105}]
+```
+to a UDP socket on port 41234 or TCP socket on port 7070.
 
 Dependent of the configuration, the agent sends data with REST or MQTT. If MQTT is configured, agent and admin always try to use MQTT for data submission. All other calls, like activation of devices or registration of components is always done with REST. Therefore, until further notice the default protocol should always be "rest+ws". The control channel which can receive commands from OISP will always be WS. MQTT control messages are Work in Progress and available soon.
 
