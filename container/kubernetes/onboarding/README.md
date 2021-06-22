@@ -1,5 +1,5 @@
-# IOT Agent Device OnBoarding Framework
-This Framework Blueprint for Onboarding Gateway Devices for Industry Fusion.
+# IOT Agent Device GitOps Framework
+Framework blueprint for GitOps Sequence Flow to OnBoard Gateway Devices for Industry Fusion.
 
 ## Installation Pre-Requisites:
 In order to setup and onboard assets on your gateway you need to do the following:
@@ -34,25 +34,14 @@ machine-config repo
 
 deployment-config-repo
 
+gitops-repo
+
 Store git credentials in cache for 30 days:
 ==========================================
 ```
 git config --global credential.helper cache
 git config --global credential.helper 'cache --timeout=2592000'
 ```
-Docker Hub:
-==========
-
-ibn40/repositories
-
-oisp/repositories
-
-Create secret for docker hub repository with your docker credentials:
-====================================================================
-```
-kubectl -n oisp-devices create secret docker-registry regcred --docker-server=docker.io --docker-username=YOUR_DOCKER_USERNAME --docker-password=YOUR_DOCKER_PASSWORD --docker-email=YOUR@EMAIL.COM
-```
-
 OISP Platform:
 =============
 Get access to OISP Platform Dashboard.
@@ -69,7 +58,7 @@ BASE_OISP_INSTANCE: <OISP_BASE_URL>
 API_VERSION:   <vX/api>
 ```
 5. Create gatewaydeployment.yaml which should consist of Application Name, Deployment Config, 
-   Machine Config details for this framework to parse and deploy the devices you want to onboard connected to your gateway. 
+   Machine Config, GitOps Repo Config details for this framework to parse and deploy the devices you want to onboard connected to your gateway. 
 Sample gatewaydeployment.yaml description:
 ```
 version: <DEPLOYMENT_YAML_VERSION_NUMBER>
@@ -86,6 +75,10 @@ CreateDeployments:
     	URL: <MACHINE_GIT_CONFIG_URL>,
        	Directory: <MACHINE_CONFIG_GIT_DIRECTORY_NAME>,
        	GitTag: <MACHINE_CONFIG_TAG_OR_COMMITID_OR_BRANCH>
+    GitOpsRepo:
+    	URL: <GITOPS_GIT_CONFIG_URL>,
+       	Directory: <GITOPS_CONFIG_GIT_DIRECTORY_NAME>,
+       	GitBranch: <GITOPS_BRANCH>
 ```
 6. Initiate the Deployment process based on three actions; create, update or delete.
 ```
@@ -115,14 +108,5 @@ configmap/global-devices-config created
 secret "global-devices-secret" deleted
 ...........
 ```
-8. After Onboarding is complete you can see the deployment pod status using following command.
-```
-kubectl -n oisp-devices get pods
-```
-9. Get detailed information on pods and containers 
-   (exchange with correct name of pod and container e.g. oisp-iot-agent)
-
-```
-kubectl -n oisp-devices describe pods airtracker-deployment-testsensor-7b5bcfb77d-5knnf
-kubectl -n oisp-devices logs airtracker-deployment-testsensor-7b5bcfb77d-w55dk oisp-iot-agent
-```
+8. After the Gitops deployment yaml is complied from different GitRepo's , We push the all.yaml 
+   file to GitOpS Repo for Rancher-Fleet Plugin to initiate the OnBoarding process for the choosen Cluster and Node.

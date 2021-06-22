@@ -27,9 +27,6 @@
 
 ## Gateway Kubernetes Environment Setup Script.
 
-NAMESPACE=${NAMESPACE:-oisp-devices}
-CONFIG_MAP_NAME=global-devices-config
-SECRET_NAME=global-devices-secret
 FILE=activation-code
 set -e
 if [ ! -f "$FILE" ]; then
@@ -41,13 +38,5 @@ if [ "$ret" -ne 0 ]; then
     # Handle Activation Code Failure
     return 1
     exit
-fi
-kubectl create namespace ${NAMESPACE} 2>/dev/null || echo "Namespace $NAMESPACE already exists. Continue."
-kubectl delete configmap ${CONFIG_MAP_NAME} -n ${NAMESPACE} 2>/dev/null || echo "ConfigMap not existing. Continue."
-kubectl create configmap ${CONFIG_MAP_NAME} --from-file=./config.json -n ${NAMESPACE}
-kubectl delete secret ${SECRET_NAME} -n ${NAMESPACE} 2>/dev/null || echo "Could not delete secret. Continue."
-
-if [ -f "$FILE" ]; then
-    kubectl create secret generic ${SECRET_NAME} --from-file=./activation-code -n ${NAMESPACE}
 fi
 set +e

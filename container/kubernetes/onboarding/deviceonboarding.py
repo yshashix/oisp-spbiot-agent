@@ -82,6 +82,48 @@ def check_deployment_status(deployment):
     return deployment_status
 
 
+def gitops_checkout_tempdir(git_url, git_dir, git_branch,
+                            appname_dir, deploy_type):
+    """Method to checkout gitops repository based on git_branch
+        and push the Compiled Gateway Configs(all.yaml)
+        file to Gitopsrepo.
+    """
+    # Create a temporary directory using the context manager
+    with tempfile.TemporaryDirectory() as tempdir:
+        # Clone into temporary dir
+        repo = Repo.clone_from(git_url, tempdir)
+
+        if deploy_type == DEPLOYMENTTYPE.DELETE:
+            repo.git.checkout(git_branch)
+            repo.git.fetch('-f')
+            repo.git.pull('-f')
+            if os.path.isfile(os.path.join(tempdir, git_dir, 'all.yaml')):
+                repo.git.rm(os.path.join(tempdir, git_dir, 'all.yaml'))
+        else:
+            if git_branch in repo.git.branch('-a'):
+                repo.git.checkout(git_branch)
+                repo.git.fetch('-f')
+                repo.git.pull('-f')
+                if not os.path.isdir(os.path.join(tempdir, git_dir)):
+                    os.makedirs(os.path.join(tempdir, git_dir))
+            else:
+                repo.git.checkout(b=git_branch)
+                if not os.path.isdir(os.path.join(tempdir, git_dir)):
+                    repo.git.rm('-f', os.path.join(tempdir, '*'))
+                    os.makedirs(os.path.join(tempdir, git_dir))
+
+            shutil.copy(os.path.join(appname_dir, 'all.yaml'),
+                        os.path.join(tempdir, git_dir, 'all.yaml'))
+
+        if deploy_type != DEPLOYMENTTYPE.DELETE:
+            repo.git.add('-f', os.path.join(tempdir, git_dir, 'all.yaml'))
+        else:
+            repo.git.add('--all')
+        repo.git.status()
+        repo.git.commit(
+            '-m', 'GitOps Compiled Configuration for OnBoarding Device at Gateway')
+        repo.git.push('-f', '--set-upstream', 'origin', git_branch)
+
 def git_clone_tempdir(git_url, git_dir, git_tag,
                       appname_dir, config_type):
     """Method to checkout git repository based on git_tag
@@ -213,11 +255,13 @@ def create_new_deployment(deploy_instance, deploy_type):
     # TestSensor doesn't have Machine Config so check and store
     # relevant Machine Config data.
     machineconfig_exist = True
-    if len(deploy_instance) > 6:
+    if len(deploy_instance) > 12:
         # Storing Machine Config Data
         machineurl, machinedir, machinegittag = deploy_instance[6:9]
+        gitopsurl, gitopsdir, gitopsbranch = deploy_instance[9:12]
     else:
         machineconfig_exist = False
+        gitopsurl, gitopsdir, gitopsbranch = deploy_instance[6:9]
 
     print("Creating dir for application:", deployment)
     os.makedirs(deployment)
@@ -234,7 +278,12 @@ def create_new_deployment(deploy_instance, deploy_type):
     subprocess.call(['sh', 'kubernetes_deployment_creation.sh',
                      nodename, deployment, NAME_SPACE, deploy_type.value])
 
-    # Clean-up local directory after creation/update/deletion of deployment.
+    # Function call for processing gitops repo and copying relevant
+    # deployment-config *.yaml files.
+    gitops_checkout_tempdir(gitopsurl, gitopsdir,
+                            gitopsbranch, deployment, deploy_type)
+
+    # Clean-up local directory after update/deletion of deployment.
     if deploy_type != DEPLOYMENTTYPE.CREATE:
         shutil.rmtree(deployment)
 
@@ -293,9 +342,6 @@ class CreateDeployment:
         process_deploy_devices_gateway(
             self.create_deployment_list, DEPLOYMENTTYPE.CREATE)
         os.chdir(current_dir)
-        ret = subprocess.call(['kubectl', '-n', NAME_SPACE, 'get', 'pods'])
-        if ret != 0:
-            sys.exit()
 
 # pylint: disable=too-few-public-methods
 # Class will be expanded for adding more features.
@@ -318,9 +364,6 @@ class UpdateDeployment:
         process_deploy_devices_gateway(
             self.update_deployment_list, DEPLOYMENTTYPE.UPDATE)
         os.chdir(current_dir)
-        ret = subprocess.call(['kubectl', '-n', NAME_SPACE, 'get', 'pods'])
-        if ret != 0:
-            sys.exit()
 
 
 # pylint: disable=too-few-public-methods
@@ -342,9 +385,6 @@ class DeleteDeployment:
         process_deploy_devices_gateway(
             self.delete_deployment_list, DEPLOYMENTTYPE.DELETE)
         os.chdir(current_dir)
-        ret = subprocess.call(['kubectl', '-n', NAME_SPACE, 'get', 'pods'])
-        if ret != 0:
-            sys.exit()
 
 
 class DeviceDeployment:
