@@ -1,5 +1,6 @@
+#!/usr/bin/env node
 /*
-Copyright (c) 2014, Intel Corporation
+Copyright (c) 2021, Intel Corporation
 
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -22,15 +23,31 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-'use strict';
-var component = require('./component.json'),
-    routing = require('./routing.json'),
-    data = require('./data.json'),
-    device = require('./device.json');
+"use strict";
+var endpoint = "127.0.0.1"
+var port     = 7070
 
-module.exports = {
-    component: component,
-    data: data,
-    device: device,
-    routing: routing
-};
+// Check for valid parameters
+if (process.argv.length != 4) {
+    console.log("Usage: " + process.argv[0] + " " + process.argv[1] + " component_name value");
+    process.exit(1);
+}
+    
+// Format JSON message containing name/value pair
+var component = process.argv[2];
+var value     = process.argv[3];
+var message = "{\"n\": \"" + component + "\", \"v\": \"" + value + "\"}";
+
+// Send TCP message to local agent
+var net = require('net');
+
+var client = new net.Socket();
+
+client.connect(port, endpoint, function() {
+    client.write(message);
+    client.end();
+});
+
+client.on('close', function() {
+    process.exit(0);
+});

@@ -28,15 +28,13 @@ var endpoint = "127.0.0.1"
 var port     = 41234
 
 // Check for valid parameters
-if (process.argv.length != 4) {
-    console.log("Usage: " + process.argv[0] + " " + process.argv[1] + " component_name value");
+if (process.argv.length != 3) {
+    console.log("Usage: " + process.argv[0] + " " + process.argv[1] + " json_data");
     process.exit(1);
 }
     
 // Format JSON message containing name/value pair
-var component = process.argv[2];
-var value     = process.argv[3];
-var data = "{\"n\": \"" + component + "\", \"v\": \"" + value + "\"}";
+var data = process.argv[2];
 
 // Send UDP message to local agent
 var dgram = require('dgram');

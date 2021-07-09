@@ -91,7 +91,7 @@ function registerObservation (comp, value) {
                 "v": value
             };
             agentMessage.handler(msg, function (stus) {
-                logger.info("Observation Sent", stus);
+                logger.info("Response:", stus);
                 process.exit(r);
             });
         } else {

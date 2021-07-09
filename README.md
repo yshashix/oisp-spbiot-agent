@@ -19,7 +19,11 @@ or a component registration
 ```
 {"n": "temp", "t": "temperature.v1.0"}
 ```
-to a UDP socket on port 41234 or TCP socket on port 7070. The agent will add the security token, add a time stamp, convert "temp" to the component (time series) ID, and send a POST over SSL to an OISP instance.
+or a device update
+```
+{"attributes": {"owner": "Scott Ware"}, "tags": ["home","intel","x86_64"], "loc": [32.149989, -110.835842, 0]}
+```
+to a UDP socket on port 41234 or TCP socket on port 7070. The agent will handle secure communication with the upstream OISP instance.
 
 ## Installing using git
 ``` bash

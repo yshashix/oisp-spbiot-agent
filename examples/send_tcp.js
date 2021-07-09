@@ -28,15 +28,13 @@ var endpoint = "127.0.0.1"
 var port     = 7070
 
 // Check for valid parameters
-if (process.argv.length != 4) {
-    console.log("Usage: " + process.argv[0] + " " + process.argv[1] + " component_name value");
+if (process.argv.length != 3) {
+    console.log("Usage: " + process.argv[0] + " " + process.argv[1] + " json_data");
     process.exit(1);
 }
     
-// Format JSON message containing name/value pair
-var component = process.argv[2];
-var value     = process.argv[3];
-var message = "{\"n\": \"" + component + "\", \"v\": \"" + value + "\"}";
+// JSON message
+var data = process.argv[2];
 
 // Send TCP message to local agent
 var net = require('net');
@@ -44,7 +42,7 @@ var net = require('net');
 var client = new net.Socket();
 
 client.connect(port, endpoint, function() {
-    client.write(message);
+    client.write(data);
     client.end();
 });
 

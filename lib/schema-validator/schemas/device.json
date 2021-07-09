@@ -1,0 +1,64 @@
+{
+    "UPDATE": {
+        "name": "device",
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+            "gatewayId": {
+                "type": "string",
+                "required": false
+            },
+            "name": {
+                "type": "string",
+                "required": false
+            },
+            "tags": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "string"
+                },
+                "required": false
+            },
+            "loc": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 3,
+                "items": {
+                    "type": "number"
+                },
+                "required": false
+            },
+            "attributes" :{
+                "type": "object",
+                "required": false
+            },
+            "description": {
+                "type": "string",
+                "required": false
+            },
+            "contact": {
+                "type": "object",
+                "required": false,
+                "properties": {
+                    "phone": {
+                    "type": "string",
+                    "required": false
+                    },
+                    "email": {
+                        "type": "string",
+                        "required": false
+                    }
+                }
+            },
+            "group": {
+                "type": "object",
+                "required": false
+            },
+            "domainId": {
+                "type": "string",
+                "required": false
+            }
+        }
+    }
+}
