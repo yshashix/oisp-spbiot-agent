@@ -41,6 +41,8 @@ var configFileKey = {
     deviceId: 'device_id',
     deviceName: 'device_name',
     deviceToken: 'device_token',
+    refreshToken: 'refresh_token',
+    deviceTokenExpire: 'device_token_expire',
     sensorList: 'sensor_list',
     lastActuationsPull: 'last_actuations_pull_time'
 };
@@ -184,6 +186,13 @@ module.exports = {
                 logger.info("Data directory changed to default.");
             });
 
+        program
+            .command('force-device-token-refresh')
+            .description('Marks the device token as expired and forces its refreshment at the start of the next command.')
+            .action(function() {
+                common.saveToDeviceConfig(configFileKey.deviceTokenExpire, new Date().getTime());
+                logger.info("Current device token is marked as expired and will be refreshed.");
+            });
     },
     getGatewayId: getGatewayId,
     setGatewayId: setGatewayId,
