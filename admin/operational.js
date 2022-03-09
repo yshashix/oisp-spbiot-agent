@@ -28,8 +28,7 @@ var logger = require('../lib/logger').init(),
     common = require("../lib/common"),
     configurator = require('../admin/configurator'),
     config = require('../config'),
-    Websocket = require('@open-iot-service-platform/oisp-sdk-js')(config).api.ws.connector,
-    wsErrors = require('@open-iot-service-platform/oisp-sdk-js')(config).api.ws.errors,
+    mqttConnector = require('@open-iot-service-platform/oisp-sdk-js')(config).api.mqtt.connector,
     exec = require('child_process').exec,
     exitMessageCode = {
         "OK": 0,
@@ -55,12 +54,7 @@ var activate = function (code) {
 };
 
 function testConnection () {
-    var host;
-    if(config.default_connector === 'rest+ws') {
-        host = config.connector['rest'].host;
-    } else {
-        host = config.connector[config.default_connector].host;
-    }
+    var host = config.connector['rest'].host;
     utils.getDeviceId(function (id) {
         var cloud = Cloud.init(logger, id);
         cloud.test(function (res) {
@@ -74,38 +68,26 @@ function testConnection () {
                 logger.error("Connection failed to %s", host);
                 exitCode = exitMessageCode.ERROR;
             }
-            if(config.default_connector === 'rest+ws') {
+
+            if (config.connector.mqtt != undefined) {
                 var deviceInfo = common.getDeviceConfig();
-                var WS = Websocket.singleton(config, deviceInfo);
-                WS.client.on('connect', function(connection) {
-                    connection.on('close', function(reasonCode, description) {
-                        logger.info('Websocket connection closed. Reason: ' + reasonCode + ' ' + description);
-                        process.exit(exitCode);
-                    });
-                    connection.on('message', function(message) {
-                        var messageObject;
-                        try {
-                            messageObject = JSON.parse(message.utf8Data);
-                        } catch (err) {
-                            logger.error('Received unexpected message from WS server: ' + message.utf8Data);
-                            exitCode = exitMessageCode.ERROR;
-                        }
-                        if (messageObject.code === wsErrors.Success.ReceivedPong.code) {
-                            logger.info('Connection to Web Socket Server successful');
-                            connection.close();
-                        }
-                    });
-                    var pingMessageObject = {
-                        "type": "ping"
-                    };
-                    connection.sendUTF(JSON.stringify(pingMessageObject));
-                });
-                logger.info("Trying to connect to WS server ...");
-                WS.connect();
-                setTimeout(function() {
-                    logger.error("Timeout exceeded. Program will exit.");
+                if (deviceInfo == null) {
+                    logger.error('Cannot test connection to MQTT before device activation...');
                     process.exit(exitCode);
-                }, config.connector.ws.testTimeout);
+                }
+                var mqtt = mqttConnector.singleton(config);
+                mqtt.updateDeviceInfo(deviceInfo);
+                logger.info("Trying to connect to MQTT...");
+                mqtt.connect(function(err) {
+                    if (err) {
+                        logger.error('Failed to connect to MQTT: ' + err);
+                        exitCode = exitMessageCode.ERROR;
+                        process.exit(exitCode);
+                    }
+
+                    logger.info('Connection to MQTT successful');
+                    mqtt.disconnect();
+                });
             }
 
         });

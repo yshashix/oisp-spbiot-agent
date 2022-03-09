@@ -28,7 +28,6 @@ var logger = require('../lib/logger').init(),
 
 var configFileKey = {
     dataDirectory: 'data_directory',
-    defaultConnector: 'default_connector',
     loggerLevel: 'logger.LEVEL',
     connectorRestProxyHost: 'connector.rest.proxy.host',
     connectorRestProxyPort: 'connector.rest.proxy.port',
@@ -80,18 +79,6 @@ var setDeviceName = function(name, cb) {
 /*istanbul ignore next*/
 module.exports = {
     addCommand : function (program) {
-        program
-            .command('protocol <protocol>')
-            .description('Set the protocol to \'rest\' or \'rest+ws\'')
-            .action(function(protocol) {
-                if (protocol === 'mqtt' || protocol === 'rest' || protocol === 'rest+ws') {
-                    common.saveToConfig(configFileKey.defaultConnector, protocol);
-                    logger.info("protocol set to: " + protocol);
-                } else {
-                    logger.error("invalid protocol: %s - please use 'rest' or 'rest+ws'", protocol);
-                    // do not clear the previous protocol
-                }
-            });
 
         program
             .command('device-id')

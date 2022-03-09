@@ -97,7 +97,7 @@ or an array like this
 ```
 to a UDP socket on port 41234 or TCP socket on port 7070.
 
-Dependent of the configuration, the agent sends data with REST or MQTT. If MQTT is configured, agent and admin always try to use MQTT for data submission. All other calls, like activation of devices or registration of components is always done with REST. Therefore, until further notice the default protocol should always be "rest+ws". The control channel which can receive commands from OISP will always be WS. MQTT control messages are Work in Progress and available soon.
+Dependent of the configuration, the agent sends data with REST or MQTT. If MQTT is configured, agent and admin always try to use MQTT for data submission and control. All other calls, like activation of devices or registration of components is always done with REST.
 
 #### Starting the Agent
 

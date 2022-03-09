@@ -14,7 +14,6 @@
 		"path": "/tmp/",
 		"max_size": 134217728
 	},
-	"default_connector": "rest+ws",
 	"connector": {
 		"rest": {
 			"host": "localhost",
