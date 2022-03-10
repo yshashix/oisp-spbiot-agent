@@ -26,27 +26,12 @@
 				"port": false
 			}
 		},
-		"ws": {
-			"host": "localhost",
-			"port": 5000,
-			"minRetryTime": 2500,
-			"maxRetryTime": 600000,
-			"testTimeout": 40000,
-			"pingPongIntervalMs": 30000,
-			"enablePingPong": true,
-			"secure": false,
-			"proxy": {
-				"host": false,
-				"port": false
-			}
-		},
 		"mqtt": {
 			"host": "localhost",
 			"port": 8883,
 			"qos": 1,
 			"retain": false,
 			"secure": true,
-			"strictSSL": true,
 			"retries": 5
 		}
 	}
