@@ -3,6 +3,7 @@
 	"env": {
 		"node": true
 	},
+	"parserOptions": { "ecmaVersion": "latest" },
 	"rules": {
 	    "no-console": "off",
 	    "indent": ["error", 4, { "ArrayExpression": "first", "ObjectExpression": "first" }],

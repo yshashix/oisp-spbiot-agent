@@ -41,30 +41,35 @@ module.exports = function(grunt) {
             local: {
                 src: ['<%= dirs.jsfiles %>'],
                 options: {
-                    configFile: '<%= dirs.eslint %>/config.json',
+                    overrideConfigFile: '<%= dirs.eslint %>/config.json',
                 }
             }
         },
-        nyc: {
-            all: {
+        nyc_mocha: {
+            target: {
+                src: "test/*.js",
                 options: {
-                    include: ['admin/**', 'lib/**', 'listeners/**'],
-                    recursive: true,
-                    reporter: ['lcov', 'text-summary'],
-                    reportDir: 'dist/coverage',
-                    tempDir: 'dist/temp',
-                    all: true
-                },
-                cmd: false,
-                args: ['mocha'],
-                rawArgs: ['--colors']
+                    nyc: {
+                        coverage: {
+                            dir: 'dist/coverage',
+                            reporter: ['lcov', 'text-summary'],
+                            include: ['admin/**', 'lib/**', 'listeners/**'],
+                            recursive: true,
+                            tempDir: 'dist/temp',
+                            all: true
+                        }
+                    },
+                    mocha: {
+                        color: true
+                    }
+                }
             }
         }
     });
 
     grunt.loadNpmTasks('grunt-eslint');
-    grunt.loadNpmTasks('grunt-simple-nyc');
+    grunt.loadNpmTasks('grunt-nyc-mocha');
 
     // Default task(s).
-    grunt.registerTask('default', ['eslint:local', 'nyc:all']);
+    grunt.registerTask('default', ['eslint:local', 'nyc_mocha:target']);
 }
