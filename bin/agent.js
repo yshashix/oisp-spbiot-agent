@@ -61,6 +61,14 @@ utils.getDeviceId(function (id) {
             }
             Listener.TCP.init(conf.listeners, logger, agentMessage.handler);
 
+            // Update catalog
+            cloud.catalog(function (catalog) {
+                if (catalog) {
+                    logger.info("Updating catalog...");
+                    utils.updateCatalog(catalog);
+                }
+            });
+
         } else {
             logger.error("Error in activation... err # : ", status);
             process.exit(status);

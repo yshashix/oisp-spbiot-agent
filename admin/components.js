@@ -135,13 +135,16 @@ function getComponentsList () {
         console.log(table.toString());
     }
 }
+
 function getCatalogList  () {
     utils.getDeviceId(function (id) {
         var cloud = Cloud.init(logger, id);
         cloud.catalog(function (catalog) {
             if (catalog) {
+                // Update catalog
+                utils.updateCatalog(catalog);
+
                 var table = new Component.Table(catalog);
-                logger.info("# of Component @ Catalog : ", catalog.length);
                 console.log(table.toString());
             }
             process.exit(0);
