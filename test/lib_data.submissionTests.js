@@ -40,6 +40,33 @@ describe(fileToTest, function() {
     var store = {
 
     };
+    var conf = {
+        "connector": {
+            "rest": {
+                "host": "frontend",
+                "port": 4001,
+                "protocol": "http",
+                "strictSSL": false,
+                "timeout": 30000,
+                "proxy": {
+                    "host": false,
+                    "port": false
+                }
+            },
+            "mqtt": {
+                "host": "emqx",
+                "port": 1883,
+                "qos": 1,
+                "retain": false,
+                "secure": true,
+                "strictSSL": false,
+                "retries": 5,
+                "sparkplugB": false,
+                "version": "spBv1.0"
+            }
+        }
+
+    }
     it('Shall Return False if not a Registration Message >', function(done) {
         var wrongMessage = {
             x: "Sensor Name",
@@ -93,6 +120,7 @@ describe(fileToTest, function() {
             }
         };
 
+        toTest.__set__("config", conf);
         connector.dataSubmit = function (metric, callback) {
             assert.isObject(metric, " Shall be an object");
             assert.property(metric, "on", "It is required the ON Message");
@@ -139,6 +167,108 @@ describe(fileToTest, function() {
             assert.isTrue(process, "Message Shall be processed Msg ");
             done();
         });
+    });
+
+    it('Shall Return True if it a valid data submission message for sparkplugB >', function(done) {
+        var okMessage = {
+            n: "Sensor Name",
+            v: 1000
+        };
+        var ci = { cid: "thisCID",
+                   n: okMessage.n,
+                   t: "thisT"};
+        var store = {
+            byName: function (name) {
+                assert.isString(name, "Shall be the name of the Component");
+                assert.equal(name, okMessage.n, "Invalid Conversion of Name Property ");
+                return ci;
+            }
+        };
+        conf.connector.mqtt.sparkplugB = true;
+
+        toTest.__set__("config", conf);
+        connector.dataSubmit = function (metric, callback) {
+            assert.isObject(metric, " Shall be an object");
+            assert.equal(metric.alias, ci.cid, "The CID/Aliasid were not propagated");
+            //         done();
+            callback(true);
+            return;
+        };
+        var handler = toTest.init(connector, store, logger);
+        handler.submission(okMessage, function(status) {
+            assert.isTrue(status, "Message Shall be processed Msg ");
+            done();
+        });
+
+    });
+
+    it('Shall Return False if invalid valid data submission message requesed for sparkplugB >', function(done) {
+        var okMessage = {
+            n: "Sensor Name",
+            v: 1000
+        };
+        var ci = { cid: "thisCID",
+                   n: "wrongName",
+                   t: "thisT"};
+        var store = {
+            byName: function (name) {
+                assert.isString(name, "Shall be the name of the Component");
+                assert.notDeepEqual(name, ci.n, "Invalid Conversion of Name Property ");
+                return null;
+            }
+        };
+        conf.connector.mqtt.sparkplugB = true;
+
+        toTest.__set__("config", conf);
+        connector.dataSubmit = function (metric, callback) {
+            assert.isObject(metric, " Shall be an object");
+            assert.equal(metric.alias, ci.cid, "The CID/Aliasid were not propagated");
+            //         done();
+            callback(false);
+            return;
+        };
+        var handler = toTest.init(connector, store, logger);
+        handler.submission(okMessage, function(status) {
+            assert.isTrue(status, "Message Shall be processed Msg ");
+            done();
+        });
+
+    });
+
+    it('Shall Return True if it a valid data submission message for sparkplugB with timestamp>', function(done) {
+        var okMessage = {
+            n: "Sensor Name",
+            v: 1000,
+            on: 1234567890
+        };
+        var ci = { cid: "thisCID",
+                   n: okMessage.n,
+                   t: "thisT"};
+        var store = {
+            byName: function (name) {
+                assert.isString(name, "Shall be the name of the Component");
+                assert.equal(name, okMessage.n, "Invalid Conversion of Name Property ");
+                return ci;
+            }
+        };
+        conf.connector.mqtt.sparkplugB = true;
+
+        toTest.__set__("config", conf);
+        connector.dataSubmit = function (metric, callback) {
+            assert.isObject(metric, " Shall be an object");
+            assert.property(metric, "on", "It is required the ON Message");
+            assert.equal(metric.on, okMessage.on, "The TimeStamp were not propagated");
+            assert.equal(metric.alias, ci.cid, "The CID/Aliasid were not propagated");
+            //         done();
+            callback(true);
+            return;
+        };
+        var handler = toTest.init(connector, store, logger);
+        handler.submission(okMessage, function(status) {
+            assert.isTrue(status, "Message Shall be processed Msg ");
+            done();
+        });
+
     });
 
 });

@@ -60,7 +60,8 @@ module.exports = function(grunt) {
                         }
                     },
                     mocha: {
-                        color: true
+                        color: true,
+                        exit:true
                     }
                 }
             }

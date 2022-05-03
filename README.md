@@ -109,6 +109,58 @@ To start the oisp-agent service simply execute the start script:
 
 For examples of how to use the 'oisp-agent' please see the [Examples](https://github.com/Open-IoT-Service-Platform/oisp-iot-agent/tree/master/examples) provided.
 
+### Enabling SparkPlugB Standard 
+
+1. To enable SparkplugB standard data format, you need to update the agent config as below:
+
+``` bash
+ "mqtt": {
+              "host": "emqx",
+              "port": 1883,
+              "qos": 1,
+              "retain": false,
+              "secure": false,
+              "strictSSL": false,
+              "retries": 5,
+              "sparkplugB": true, 
+              "version": "spBv1.0"            
+          }
+```
+ - "SparkplugB":true -> enables the sparkplugB feature of agent
+ - "version": "spBv1.0", -> version of spB standard, default is spBv1.0
+ 
+ 2.  CID is used as alias, as sparkplugB standard suggest unique id as alias in data metric element.
+   Data message looks like below:
+
+``` bash
+    var cid = "0c574252-31d5-4b76-bce6-53f2c56b544d";
+    var DataMessage = {
+            timestamp: 12345,
+            metrics: [{
+                name : "temp",
+                alias : cid,
+                timestamp : 12345,
+                dataType : "float",
+                value: 123
+            }],
+            seq: 1
+         };
+```
+
+3. Sending NGSI-LD compatible data over Mqtt-SparkplugB
+- Register devices for custom Relationship and Property catalog
+- Use device name for Relationship as " Name : Relationship/Name_of_device",
+
+    Datatype is iri (String):
+
+    Eg. Name: "Relationship/https://industry-fusion.com/types/v0.9/hasFilter"
+
+- Use device name format for Property as " Name: Property/Name_of_device"
+
+  Datatype can be literals(string, integer,boolean) and iri(string)
+
+  Eg. Name: "Property/https://industry-fusion.com/types/v0.9/state"
+
 ## Test
 
 The oisp-agent project uses [gruntjs](http://gruntjs.com/) [mocha](http://visionmedia.github.io/mocha/) as its test framework. 
