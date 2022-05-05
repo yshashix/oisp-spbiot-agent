@@ -31,8 +31,8 @@ start:
 					-d -t -i --network=host --rm \
 					--env OISP_DEVICE_ACTIVATION_CODE=$${OISP_DEVICE_ACTIVATION_CODE} \
 					--env OISP_DEVICE_ID=$${OISP_DEVICE_ID} \
-					--env	OISP_DEVICE_NAME=$${OISP_DEVICE_NAME} \
-					--env	OISP_FORCE_REACTIVATION=$${OISP_FORCE_REACTIVATION} \
+					--env OISP_DEVICE_NAME=$${OISP_DEVICE_NAME} \
+					--env OISP_FORCE_REACTIVATION=$${OISP_FORCE_REACTIVATION} \
 					--name ${CONTAINER_NAME} ${IMAGE_NAME}
 
 stop:
@@ -58,7 +58,7 @@ clean: stop
 
 test: .prepare-testconfig build start
 	# Testing basic data sending
-	@make COMPONENT_NAME=${COMPONENT_NAME} ACCOUNTID=${ACCOUNTID} DEVICENAME=${DEVICENAME} -C container test
+	@make COMPONENT_NAME=${COMPONENT_NAME} ACCOUNTID=${ACCOUNTID} DEVICENAME=${DEVICENAME} USERNAME=${USERNAME} PASSWORD=${PASSWORD} -C container test
 	# Testing automatic device token refresh mechanism
 	@docker exec oisp-iot-agent ./oisp-admin.js force-device-token-refresh
 	@docker exec oisp-iot-agent ./oisp-admin.js register refresh-test-sensor temperature.v1.0

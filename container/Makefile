@@ -8,15 +8,21 @@ IMAGE_NAME="oisp/oisp-testsensor"
 CONTAINER_NAME="oisp-testsensor"
 DOCKERFILE_NAME="Dockerfile.testsensor"
 TEST_SAMPLE_NUM=10
+ROOTDIR="../"
 
 build:
 	@$(call msg,"Building testsensor ...");
+	@cp ${ROOTDIR}/config/config.json ./scripts/testsensor
 	@/bin/bash -c "docker build . -t ${IMAGE_NAME} -f ${DOCKERFILE_NAME}"
 
 start:
 	@$(call msg,"Starting testsensor ...");
 	@/bin/bash -c "docker run -it --rm --network=host \
 		--env TEST_SAMPLES=${TEST_SAMPLE_NUM} \
+		--env USERNAME=${USERNAME} \
+		--env PASSWORD=${PASSWORD} \
+		--env ACCOUNTID=${ACCOUNTID} \
+		--env DEVICEID=${DEVICENAME} \
 		--name ${CONTAINER_NAME} ${IMAGE_NAME}"
 
 stop:

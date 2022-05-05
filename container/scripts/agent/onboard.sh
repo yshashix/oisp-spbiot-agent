@@ -28,14 +28,13 @@ if [ -z "$TOKEN" ] || [ "$TOKEN" = "\"\"" ] || [ "$TOKEN" = "false" ] || [ ! -z 
     if [ -z "$OISP_DEVICE_ACTIVATION_CODE" ]; then
         fail "No Device Activation Code given but no token found or reactivation is forced"
     fi
-    ${ADMIN} test || fail "No connectivity to OISP"
+    ${ADMIN} test
     ${ADMIN} initialize
     if [ ! -z "$OISP_DEVICE_ID" ]; then
         ${ADMIN} set-device-id $OISP_DEVICE_ID
     else
         fail "No device id given"
     fi
-
     if [ ! -z "$OISP_DEVICE_NAME" ]; then
         ${ADMIN} set-device-name $OISP_DEVICE_NAME
     fi

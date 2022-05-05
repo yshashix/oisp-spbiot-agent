@@ -7,7 +7,7 @@
 	},
 	"receivers": {
 		"udp_port": 41235,
-		"udp_address": "0.0.0.0"
+		"udp_address": "127.0.0.1"
 	},
 	"logger": {
 		"level": "info",
@@ -16,7 +16,7 @@
 	},
 	"connector": {
 		"rest": {
-			"host": "localhost",
+			"host": "127.0.0.1",
 			"port": 80,
 			"protocol": "http",
 			"strictSSL": false,
@@ -27,7 +27,7 @@
 			}
 		},
 		"mqtt": {
-			"host": "localhost",
+			"host": "127.0.0.1",
 			"port": 8883,
 			"qos": 1,
 			"retain": false,

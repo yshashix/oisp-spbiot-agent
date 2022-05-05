@@ -6,134 +6,385 @@
 // COMPONENT_NAME: name of the component
 // LOG_LEVEL: log level
 "use strict";
-var dgram = require('dgram');
-var PD = require('probability-distributions');
-var winston = require('winston');
-var fs = require('fs');
-const specsFileName = '/etc/oisp/sensorSpecs.json';
+const dgram = require("dgram");
+const util = require("util");
+const PD = require("probability-distributions");
+const winston = require("winston");
+const fs = require("fs");
+const sensorSpecsFileName = "/etc/oisp/sensorSpecs.json";
+const actuatorSpecsFileName = "/etc/oisp/actuatorSpecs.json";
+const assert = require("assert").strict;
+const config = require("./config.json");
+const oispSdk = require("@open-iot-service-platform/oisp-sdk-js");
+const api = oispSdk(config).api.rest;
+const COMMAND_ALREADY_EXISTS = 1409
+
+const username = process.env.USERNAME;
+const password = process.env.PASSWORD;
+const accountId = process.env.ACCOUNTID;
+const deviceId = process.env.DEVICEID;
 
 var logLevel = process.env.LOG_LEVEL;
 if (logLevel === undefined) {
-    logLevel = 'warn';
+    logLevel = "info";
 }
 const logger = winston.createLogger({
     level: logLevel,
     transports: [
-	new winston.transports.Console()
+        new winston.transports.Console()
     ]
-})
+});
 
-var default_port = 41234;
-var default_host = '127.0.0.1';
-var default_sensorSpecs = [
+const default_port = 41234;
+const default_host = "127.0.0.1";
+const default_sensorSpecs = [
     {
-	agents: [
-	    {
-		port: default_port,
-		host: default_host
-	    }
-	],
-	name: "tempSensor",
-	componentName: "temp",
-	componentType: "temperature.v1.0",
-	type: "number",
-  sleep: 5000,
-	sigma: 0.3,
-	startValue: 20
+        agents: [
+            {
+                port: default_port,
+                host: default_host
+            }
+        ],
+        name: "tempSensor",
+        componentName: "temp",
+        componentType: "temperature.v1.0",
+        type: "number",
+        sleep: 5000,
+        sigma: 0.3,
+        startValue: 20
+    }
+];
+
+const default_actuatorSpecs = [
+    {
+        agents: [
+            {
+                port: default_port,
+                host: default_host
+            }
+        ],
+        name: "switchActuator",
+        componentName: "switch",
+        componentType: "powerswitch.v1.0",
+        type: "boolean"
     }
 ]
+
+const defaultListenPort = 41235;
+var listenPort = defaultListenPort;
+if (process.env.LISTEN_PORT) {
+    listenPort = process.env.LISTEN_PORT;
+}
 
 var values = {};
 var numSamples = 0;
 var testSamples;
 
 var sensorSpecs = [];
+var actuatorSpecs = [];
 
-if (fs.existsSync(specsFileName)) {
-    var jsondata = fs.readFileSync(specsFileName);
+if (fs.existsSync(sensorSpecsFileName)) {
+    var jsondata = fs.readFileSync(sensorSpecsFileName);
     sensorSpecs = JSON.parse(jsondata);
-    logger.info("SensorSpec found in /etc/oisp. Loaded: " + JSON.stringify(sensorSpecs));
-}
-else {
+    logger.info("SensorSpec found in /etc/oisp. Loaded: " +
+        JSON.stringify(sensorSpecs));
+} else {
     sensorSpecs = default_sensorSpecs;
-    logger.info("SensorSpec NOT found in /etc/oisp. Default: " + JSON.stringify(sensorSpecs));
+    logger.info("SensorSpec NOT found in /etc/oisp. Default: " +
+        JSON.stringify(sensorSpecs));
+}
+
+if (fs.existsSync(actuatorSpecsFileName)) {
+    var jsondata = fs.readFileSync(actuatorSpecsFileName);
+    actuatorSpecs = JSON.parse(jsondata);
+    logger.info("ActuatorSpec found in /etc/oisp. Loaded: " +
+        JSON.stringify(actuatorSpecs));
+} else {
+    actuatorSpecs = default_actuatorSpecs;
+    logger.info("ActuatorSpec NOT found in /etc/oisp. Default: " +
+        JSON.stringify(actuatorSpecs));
 }
 
 if (process.env.TEST_SAMPLES) {
     testSamples = process.env.TEST_SAMPLES;
+} else {
+    testSamples = 10;
 }
 
-var registerComponent = function(spec) {
-    spec.compRegistering++;
-    if (spec.compRegistering > 5) {
-      return;
+const sleep = util.promisify(setTimeout);
+
+function registerComponentToAgent(component, agent) {
+    const client = dgram.createSocket("udp4");
+    logger.verbose("Registering component: " + JSON.stringify(component) +
+        " at url " + agent.host + ":" + agent.port);
+    const compMsg = Buffer.from(JSON.stringify(component), "utf-8");
+    const send = util.promisify(client.send);
+    const close = util.promisify(client.close);
+    return send.apply(client, [compMsg, 0, compMsg.length, agent.port, agent.host])
+        .then(() => {
+            return close.apply(client);
+        })
+        .catch(err => {
+            logger.error("Error: " + err);
+            return close.apply(client);
+        });
+}
+
+function registerComponent(component) {
+    const promises = [];
+    component.agents.forEach(agent => {
+        var telemetry = {
+            "n": component.componentName,
+            "t": component.componentType
+        };
+        promises.push(registerComponentToAgent(telemetry, agent));
+    });
+    return Promise.all(promises);
+}
+
+function registerComponents(components) {
+    const promises = [];
+    components.forEach(component => {
+        promises.push(registerComponent(component));
+    });
+    return Promise.all(promises);
+}
+
+function sendObservationToAgent(data, agent) {
+    const client = dgram.createSocket("udp4");
+    const send = util.promisify(client.send);
+    const close = util.promisify(client.close);
+    const dataMsg = Buffer.from(JSON.stringify(data), "utf-8");
+    return send.apply(client, [dataMsg, 0, dataMsg.length, agent.port, agent.host])
+        .then(() => {
+            return close.apply(client);
+        })
+        .catch(err => {
+            logger.error("Error: " + err);
+            return close.apply(client);
+        });
+}
+
+function sendObservation(component, data) {
+    const promises = [];
+    component.agents.forEach(agent => {
+        promises.push(sendObservationToAgent(data, agent));
+    });
+    return Promise.all(promises);
+}
+
+function sendObservations(samples, sensors) {
+    if (!samples) {
+        samples = testSamples;
     }
-    var component = { "t": spec.componentType, "n": spec.componentName }
-    var comp_message = new Buffer(JSON.stringify(component));
-    spec.agents.forEach(function(agent){
-	var client = dgram.createSocket('udp4');
-	logger.verbose("Registring component: " + JSON.stringify(component) + " at url " + agent.host + ":" + agent.port);
-	client.send(comp_message, 0, comp_message.length, agent.port, agent.host, function(err, response) {
-            if (err) logger.error("Error: " + err);
-            client.close();
-	});
+    if (!sensors) {
+        sensors = sensorSpecs;
+    }
+    const promises = [];
+    sensors.forEach(component => {
+        var promise = new Promise((resolve, reject) => {
+            resolve();
+        });
+        for (var i = 0; i < samples; i++) {
+            var value = values[component.name];
+            if (component.type === "string") {
+                value += Math.round(Math.random() * 100000000);
+            }
+            var telemetry = {
+                "n": component.componentName,
+                "v": value
+            };
+            var promise = promise
+                .then(() => { return sendObservation(component, telemetry) })
+                .then(() => { return sleep(5000) });
+            if (component.type === "number") {
+                var change = PD.rnorm(1, 0, component.sigma);
+                value += change[0];
+                values[component.name] = value;
+            }
+        }
+        promises.push(promise);
     });
+    return Promise.all(promises);
 }
 
-var sendObservation = function(spec, data, cb) {
-    var message = new Buffer(JSON.stringify(data));
-    spec.agents.forEach(function(agent) {
-	var client = dgram.createSocket('udp4');
-	client.send(message, 0, message.length, agent.port, agent.host, function(err, response) {
-            cb && cb(err, response);
-            client.close();
-	});
-    });
+function sendActuation(userToken, accountId, actuatorCid, actuatorParamName, value) {
+    const sendActuation = util.promisify(api.control.sendActuationCommand);
+    var data = {
+        userToken: userToken,
+        accountId: accountId,
+        body: {
+            commands: [{
+                componentId: actuatorCid,
+                transport: "mqtt",
+                parameters: [{
+                    name: actuatorParamName,
+                    value: value.toString()
+                }]
+            }],
+            complexCommands: []
+        },
+    };
+    return sendActuation.apply(api.control, [data]);
 }
 
-var getRandomInteger = function(min, max) {
+function getRandomInteger(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-//initialize all values
+var receivedActuations = 0;
+var userToken = null;
+var sensorCid = null;
+var actuatorCid = null;
+const switchOffCmdName = "switch_off_command3";
+const actuatorParamName = "LED";
+const ruleTestSamples = 3;
+const actuationValues = [true, false, false, false, true];
+
+const client = dgram.createSocket("udp4");
+
+client.on("error", (err) => {
+    logger.error("Actuation error: " + err);
+    client.close();
+    process.exit(1);
+})
+
+client.on("message", (msg, rinfo) => {
+    msg = JSON.parse(msg.toString("utf-8"));
+    assert.strictEqual(msg.component, actuatorSpecs[0].componentName,
+        "Expected actuation for: " + actuatorSpecs[0].componentName + ", but got " +
+        "actuation for: " + msg.component);
+    assert.strictEqual(msg.argv, actuationValues[receivedActuations],
+        "Expected actuation: " + actuationValues[receivedActuations] + " but got: " +
+        msg.argv + ", by index: " + receivedActuations);
+    receivedActuations++;
+    if (receivedActuations === actuationValues.length) {
+        logger.info("Actuation test successful!");
+        client.close();
+        process.exit(0);
+    }
+});
+
+// initialize all values
 sensorSpecs.forEach(function(spec) {
     values[spec.name] = spec.startValue;
-    spec.compRegistering = 0;
 });
 
-//first register the temp component
-sensorSpecs.forEach(function(spec) {
-    setTimeout(
-	function() {registerComponent(spec)}, 5000);
-});
-
-sensorSpecs.forEach(function(spec){
-    var sleeptime = 5000;
-    if (spec.sleep != undefined) {
-      sleeptime = spec.sleep;
+logger.info("Registering components...");
+registerComponents(sensorSpecs).then(() => {
+    logger.info("Component registration successful!");
+    return sleep(500);
+}).then(() => {
+    logger.info("Sending observations...");
+    return sendObservations();
+}).then(() => {
+    logger.info("Observation sending successful!");
+    if (!username || !password || !accountId) {
+        logger.info("User credentials not found, skipping actuation tests...");
+        process.exit(0);
     }
-    setTimeout(
-	function(){ setInterval(function() {
-	    //to be on the save side re-register. Agent will realize if already existing
-	    registerComponent(spec);
-	    var value = values[spec.name];
-	    if (spec.type === "string") {
-		value += Math.round(Math.random() * 100000000);
-		}
-	    var telemetry = { "n": spec.componentName, "v": value };
-	    sendObservation(spec, telemetry, function(err, bytes) {
-		if (err) logger.error("Error:" + err);
-		logger.info(telemetry)
-		if (spec.type === "number") {
-		    var change = PD.rnorm(1, 0, spec.sigma);
-		    value += change[0];
-		    values[spec.name] = value;
-		}
-		numSamples++;
-		if (testSamples && numSamples >= testSamples) {
-		    logger.info("Maximal number of testsamples reached. Terminating!")
-		    process.exit(0);
-		}
-	    })
-	}, sleeptime)}, 10000)
+    return registerComponents(actuatorSpecs);
+}).then(() => {
+    const getToken = util.promisify(api.auth.getAuthToken);
+    const data = {
+        body: {
+            username: username,
+            password: password
+        }
+    };
+    return getToken.apply(api.auth, [data]);
+}).then(response => {
+    userToken = response.token;
+    const getDevice = util.promisify(api.devices.getDeviceDetails);
+    const data = {
+        userToken: userToken,
+        accountId: accountId,
+        deviceId: deviceId
+    };
+    return getDevice.apply(api.devices, [data]);
+}).then(response => {
+    const sensor = response.components.find(c => {
+        return c.name === sensorSpecs[0].componentName;
+    });
+    const actuator = response.components.find(c => {
+        return c.name === actuatorSpecs[0].componentName;
+    });
+    sensorCid = sensor.cid;
+    actuatorCid = actuator.cid;
+    const createCommand = util.promisify(api.control.saveComplexCommand);
+    var data = {
+        userToken: userToken,
+        accountId: accountId,
+        commandName: switchOffCmdName,
+        body: {
+            commands: [{
+                componentId: actuatorCid,
+                transport: "mqtt",
+                parameters: [{
+                    name: actuatorParamName,
+                    value: "0"
+                }]
+            }]
+        },
+        deviceId: deviceId
+    };
+    return createCommand.apply(api.control, [data]).catch(err => {
+        if (JSON.parse(err).code !== COMMAND_ALREADY_EXISTS) {
+            throw err;
+        }
+    });
+}).then(() => {
+    const createRule = util.promisify(api.rules.createRule);
+    var data = {
+        userToken: userToken,
+        accountId: accountId,
+        body: {
+            name: "oisp-tests-sensor-gte-rule",
+            description: "OISP testing rule",
+            priority: "Medium",
+            type: "Regular",
+            status: "Active",
+            resetType: "Automatic",
+            synchronizationStatus: "NotSync",
+            actions: [{
+                type: "actuation",
+                target: [ switchOffCmdName ]
+            }],
+            population: {
+                ids: [deviceId],
+                attributes: null,
+                tags: null
+            },
+            conditions: {
+                operator: "OR",
+                values: [{
+                    component: {
+                        dataType: "Number",
+                        name: sensorSpecs[0].componentName,
+                        cid: sensorCid
+                    },
+                    type: "basic",
+                    values: ["0"],
+                    operator: ">="
+                }]
+            }
+        }
+    };
+    return createRule.apply(api.rules, [data]);
+}).then((response) => {
+    client.bind(listenPort);
+    return sleep(5000);
+}).then(() => {
+    return sendActuation(userToken, accountId, actuatorCid, actuatorParamName, 1);
+}).then(() => {
+    return sendObservations(ruleTestSamples, [sensorSpecs[0]]);
+}).then(() => {
+    return sendActuation(userToken, accountId, actuatorCid, actuatorParamName, 1);
+}).then(() => {
+    return sleep(45000);
+}).then(() => {
+    throw "Timeout in the actuation test, exiting...";
+}).catch(err => {
+    logger.error(err);
+    process.exit(1);
 });

@@ -29,6 +29,8 @@ echo Executing with USERNAME=${USERNAME} DEVICEID=${DEVICEID} DEVICENAME=${DEVIC
 # get token
 ${CLIBIN} auth.post.token ${USERNAME} ${PASSWORD} 2>/dev/null
 ${CLIBIN} auth.get.tokeninfo
+ACCOUNTID=$(${CLIBIN} local.accounts | cut -d " " -f 1)
+${CLIBIN} accounts.get ${ACCOUNTID}
 ACCOUNT=$(${CLIBIN} local.accounts | cut -d " " -f 2)
 echo Account: $ACCOUNT
 ${CLIBIN} accounts.put.refresh $ACCOUNT
