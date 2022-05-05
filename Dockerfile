@@ -17,6 +17,8 @@ USER agent
 RUN npm --force cache clean
 
 RUN npm install
+RUN node_modules/grunt-cli/bin/grunt default
+
 EXPOSE 1884
 EXPOSE 8000
 EXPOSE 41234

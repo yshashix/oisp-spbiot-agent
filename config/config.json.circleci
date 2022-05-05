@@ -16,7 +16,7 @@
 	},
 	"connector": {
 		"rest": {
-			"host": "127.0.0.1",
+			"host": "frontend",
 			"port": 4001,
 			"protocol": "http",
 			"strictSSL": false,
@@ -27,7 +27,7 @@
 			}
 		},
 		"mqtt": {
-			"host": "127.0.0.1",
+			"host": "emqx",
 			"port": 8883,
 			"qos": 1,
 			"retain": false,
