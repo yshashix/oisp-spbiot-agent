@@ -271,9 +271,11 @@ sensorSpecs.forEach(function(spec) {
 });
 
 logger.info("Registering components...");
-registerComponents(sensorSpecs).then(() => {
+sleep(5000).then(() => {
+    return registerComponents(sensorSpecs);
+});
     logger.info("Component registration successful!");
-    return sleep(500);
+    return sleep(5000);
 }).then(() => {
     logger.info("Sending observations...");
     return sendObservations();
@@ -283,8 +285,10 @@ registerComponents(sensorSpecs).then(() => {
         logger.info("User credentials not found, skipping actuation tests...");
         process.exit(0);
     }
+    logger.info("User credentials found, continuing with actuation tests...");
     return registerComponents(actuatorSpecs);
 }).then(() => {
+    logger.info("Test switch registratiion successful!");
     const getToken = util.promisify(api.auth.getAuthToken);
     const data = {
         body: {
@@ -294,6 +298,7 @@ registerComponents(sensorSpecs).then(() => {
     };
     return getToken.apply(api.auth, [data]);
 }).then(response => {
+    logger.info("Login with credentials...");
     userToken = response.token;
     const getDevice = util.promisify(api.devices.getDeviceDetails);
     const data = {
@@ -303,6 +308,7 @@ registerComponents(sensorSpecs).then(() => {
     };
     return getDevice.apply(api.devices, [data]);
 }).then(response => {
+    logger.info("Received device details...");
     const sensor = response.components.find(c => {
         return c.name === sensorSpecs[0].componentName;
     });
@@ -334,6 +340,7 @@ registerComponents(sensorSpecs).then(() => {
         }
     });
 }).then(() => {
+    logger.info("Created power off command...");
     const createRule = util.promisify(api.rules.createRule);
     var data = {
         userToken: userToken,
@@ -372,15 +379,20 @@ registerComponents(sensorSpecs).then(() => {
     };
     return createRule.apply(api.rules, [data]);
 }).then((response) => {
+    logger.info("Created basic rule with power off command...");
     client.bind(listenPort);
     return sleep(5000);
 }).then(() => {
+    logger.info("Device now listening for actuations...");
     return sendActuation(userToken, accountId, actuatorCid, actuatorParamName, 1);
 }).then(() => {
+    logger.info("Power on actuation sent!");
     return sendObservations(ruleTestSamples, [sensorSpecs[0]]);
 }).then(() => {
+    logger.info("Sent data for rule triggering...");
     return sendActuation(userToken, accountId, actuatorCid, actuatorParamName, 1);
 }).then(() => {
+    logger.info("Power on actuation sent!");
     return sleep(45000);
 }).then(() => {
     throw "Timeout in the actuation test, exiting...";

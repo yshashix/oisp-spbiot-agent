@@ -52,7 +52,7 @@ jobs:
         export PATH=$PATH:/snap/bin
         make import-images DOCKER_TAG=test DEBUG=true
         docker image prune -a -f
-        rm -rf oisp-*
+        ls | grep "oisp-*" | grep -v oisp-iot-agent | xargs rm -rf
         npm install nodemailer
         export NODOCKERLOGIN=true
         retval=2
@@ -63,20 +63,23 @@ jobs:
           make undeploy-oisp
           (for i in {1..20}; do sleep 60; echo .; done&) &&  make deploy-oisp-test
           make test-prep-only
+          FRONTEND_POD=$(kubectl -n oisp get pods | grep frontend | cut -d " " -f 1)
+          EMQX_POD=$(kubectl -n oisp get pods | grep emqx | grep -v emqx-cert | cut -d " " -f 1)
+          cd ./oisp-iot-agent
+          npm install
+          cp ./config/config.json.template ./config/config.json
+          tmp=$(mktemp)
+          jq ".connector.mqtt.port=1883|.connector.mqtt.secure=false" ./config/config.json > "${tmp}" && mv "${tmp}" ./config/config.json
+          node oisp-admin.js initialize
+          FRONTEND_POD=$(kubectl -n oisp get pods | grep frontend | cut -d " " -f 1)
+          EMQX_POD=$(kubectl -n oisp get pods | grep emqx | grep -v emqx-cert | cut -d " " -f 1)
+          kubectl -n oisp port-forward ${FRONTEND_POD} 4001:4001 &>/dev/null &
+          kubectl -n oisp port-forward ${EMQX_POD} 1883:1883 &>/dev/null &
+          make test
           retval=$?
+          cd ..
           loops=$((loops+1))
         done
-        echo Test prep only return value: ${retval}
-        cd ./oisp-iot-agent
-        npm install
-        node oisp-admin.js initialize
-        cp ./config/config.json.template ./config/config.json
-        FRONTEND_POD=$(kubectl -n oisp get pods | grep frontend | cut -d " " -f 1)
-        EMQX_POD=$(kubectl -n oisp get pods | grep emqx | grep -v emqx-cert | cut -d " " -f 1)
-        kubectl -n oisp port-forward ${FRONTEND_POD} 8883:8883 &>/dev/null &
-        kubectl -n oisp port-forward ${EMQX_POD} 8883:8883 &>/dev/null &
-        make test
-        retval=$?
         echo Agent test return value: ${retval}
         exit ${retval}
     - name: debug with upterm

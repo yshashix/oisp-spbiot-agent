@@ -17,7 +17,7 @@ build:
 
 start:
 	@$(call msg,"Starting testsensor ...");
-	@/bin/bash -c "docker run -it --rm --network=host \
+	@/bin/bash -c "docker run --rm --network=host \
 		--env TEST_SAMPLES=${TEST_SAMPLE_NUM} \
 		--env USERNAME=${USERNAME} \
 		--env PASSWORD=${PASSWORD} \

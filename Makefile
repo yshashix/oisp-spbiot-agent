@@ -52,7 +52,7 @@ clean: stop
 	@rm -f config/config.json
 
 .prepare-testconfig:
-		@cp config/config.json.circleci config/config.json
+		@cp config/config.json.template config/config.json
 		cd ${GETAGENTENVDIR} && make build && source ./getActivationCode.sh ${USERNAME} ${PASSWORD} ${DEVICENAME}
 		@touch $@
 
