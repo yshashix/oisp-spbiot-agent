@@ -52,9 +52,9 @@ clean: stop
 	@rm -f config/config.json
 
 .prepare-testconfig:
-		@cp config/config.json.template config/config.json
-		cd ${GETAGENTENVDIR} && make build && source ./getActivationCode.sh ${USERNAME} ${PASSWORD} ${DEVICENAME}
-		@touch $@
+	@cp -n config/config.json.template config/config.json
+	cd ${GETAGENTENVDIR} && make build && source ./getActivationCode.sh ${USERNAME} ${PASSWORD} ${DEVICENAME}
+	@touch $@
 
 test: .prepare-testconfig build start
 	# Testing basic data sending

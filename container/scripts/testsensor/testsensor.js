@@ -194,7 +194,7 @@ function sendObservations(samples, sensors) {
                 "n": component.componentName,
                 "v": value
             };
-            var promise = promise
+            promise = promise
                 .then(() => { return sendObservation(component, telemetry) })
                 .then(() => { return sleep(5000) });
             if (component.type === "number") {
@@ -271,11 +271,11 @@ sensorSpecs.forEach(function(spec) {
 });
 
 logger.info("Registering components...");
-sleep(5000).then(() => {
+sleep(10000).then(() => {
     return registerComponents(sensorSpecs);
-});
+}).then(() => {
     logger.info("Component registration successful!");
-    return sleep(5000);
+    return sleep(10000);
 }).then(() => {
     logger.info("Sending observations...");
     return sendObservations();
