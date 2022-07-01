@@ -9,7 +9,9 @@ on:
       - '**-debugtest'
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    env:
+      SELF_HOSTED_RUNNER: true
+    runs-on: private
     steps:
     - uses: actions/checkout@v3
       with:
@@ -21,10 +23,28 @@ jobs:
       shell: bash
       run: |
         export TERM=vt100
-        sudo apt install jq
-        wget https://github.com/txn2/kubefwd/releases/download/1.22.2/kubefwd_amd64.deb
-        sudo dpkg -i kubefwd_amd64.deb
         cd platform-launcher
+        if [ -z "${SELF_HOSTED_RUNNER}" ]; then
+            sudo apt install jq
+            wget https://github.com/txn2/kubefwd/releases/download/1.22.2/kubefwd_amd64.deb
+            sudo dpkg -i kubefwd_amd64.deb
+            echo "Change group of /etc/hosts"
+            echo --------------------------
+            sudo groupadd runner
+            sudo chgrp runner /etc/hosts
+            sudo usermod -a -G runner "${USER}"
+            sudo chmod 664 /etc/hosts
+            echo "Set suid flag for kubefwd"
+            echo --------------------------
+            sudo chown root /usr/local/bin/kubefwd
+            sudo chmod +s /usr/local/bin/kubefwd
+            echo "Edit /tmp permissions for kubefwd"
+            sudo chgrp runner /tmp
+            sudo chmod 755 /tmp
+            sudo apt install acl
+            sudo setfacl -Rdm g:runner:rwx /tmp
+            sudo chmod g+s /tmp
+        fi
         make update
     - uses: actions/checkout@v3
       with:
@@ -35,8 +55,13 @@ jobs:
       working-directory: platform-launcher
       run: |
         export TERM=vt100
-        cd util && \
-        bash setup-ubuntu20.04.sh
+        if [ -z "${SELF_HOSTED_RUNNER}" ]; then
+            cd util && \
+            bash setup-ubuntu20.04.sh
+        else
+            make recreate-registry
+            make restart-cluster
+        fi
     - name: Build platform
       working-directory: platform-launcher
       shell: bash
@@ -68,8 +93,8 @@ jobs:
           kubectl -n oisp label svc/emqx app=emqx
           # kubefwd gives error in the runner when forwarding WSS, disable it
           kubectl -n oisp patch svc emqx --patch '{"spec":{"ports":[{"name":"mqtt","port":1883,"protocol":"TCP","targetPort":"mqtt"}]}}' --type='merge'
-          sudo pkill sudo
-          sudo -E KUBECONFIG=~/.kube/config kubefwd svc -n oisp -l "app in (frontend, emqx)"&
+          pkill kubefwd
+          KUBECONFIG=~/.kube/config kubefwd svc -n oisp -l "app in (frontend, emqx)"&
           sleep 10
           cd ./oisp-iot-agent
           npm install
