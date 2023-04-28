@@ -166,6 +166,7 @@ describe(fileToTest, function() {
         IoTkitCloud.spbMetricList = spbMetricList;
         IoTkitCloud.deviceConf = deviceConf;
         IoTkitCloud.secret = secret;
+        IoTkitCloud.birthMsgStatus = true;
         IoTkitCloud.isActivated = activated;
         IoTkitCloud.dataSubmit(metric,function(status) {
             assert.isTrue(status, "Message Shall be processed Msg ");
@@ -236,6 +237,7 @@ describe(fileToTest, function() {
         IoTkitCloud.spbMetricList = spbMetricList;
         IoTkitCloud.deviceConf = deviceConf;
         IoTkitCloud.secret = secret;
+        IoTkitCloud.birthMsgStatus = true;
         IoTkitCloud.isActivated = activated;
         IoTkitCloud.dataSubmit(metric,function(status) {
             assert.isTrue(status, "Message Shall be processed Msg ");
@@ -298,6 +300,7 @@ describe(fileToTest, function() {
         IoTkitCloud.spbMetricList = spbMetricList;
         IoTkitCloud.deviceConf = deviceConf;
         IoTkitCloud.secret = secret;
+        IoTkitCloud.birthMsgStatus = true;
         IoTkitCloud.isActivated = activated;
         IoTkitCloud.dataSubmit(metric,function(status) {
             assert.isFalse(status, "Message Shall be processed Msg ");
@@ -387,6 +390,7 @@ describe(fileToTest, function() {
         IoTkitCloud.spbMetricList = spbMetricList;
         IoTkitCloud.deviceConf = deviceConf;
         IoTkitCloud.secret = secret;
+        IoTkitCloud.birthMsgStatus = true;
         IoTkitCloud.isActivated = activated;
         IoTkitCloud.dataSubmit(metric,function(status) {
             assert.isTrue(status, "Message Shall be processed Msg ");
@@ -452,6 +456,7 @@ describe(fileToTest, function() {
         IoTkitCloud.spbMetricList = spbMetricList;
         IoTkitCloud.deviceConf = deviceConf;
         IoTkitCloud.secret = secret;
+        IoTkitCloud.birthMsgStatus = true;
         IoTkitCloud.isActivated = activated;
         IoTkitCloud.dataSubmit(metric,function(status) {
             assert.isFalse(status, "Message Shall be processed Msg ");
