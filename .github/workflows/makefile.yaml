@@ -19,6 +19,46 @@ jobs:
         ref: 'develop'
         path: platform-launcher
         submodules: recursive
+    - uses: actions/checkout@v3
+      with:
+        repository: IndustryFusion/DigitalTwin
+        path: ./DigitalTwin
+    - name: Prepare Digital Twin
+      shell: bash
+      run: |
+        if [ -z "${SELF_HOSTED_RUNNER}" ]; then
+          ( cd ./DigitalTwin/test && bash ./prepare-platform.sh )
+        else
+          ( cd ./DigitalTwin/test && bash ./prepare-platform-for-self-hosted-runner.sh )
+        fi
+    - name: Prepare IFF Bats Framework
+      shell: bash
+      run: |
+        cd ./DigitalTwin/test/bats
+        bash ./prepare-test.sh
+        bats linting.bats
+        shellcheck *.sh *.bats test-*/*.bats
+    - name: Build Digital Twin locally
+      shell: bash
+      run: |
+        cd ./DigitalTwin/test && bash build-local-platform.sh
+    - name: Install Digital Twin from local registry
+      shell: bash
+      run: |
+        cd ./DigitalTwin/test
+        retval=2
+        loops=0
+        until bash install-local-platform.sh || [ ${loops} -gt 3 ]; do
+          loops=$((loops+1))
+          echo loop: ${loops}
+          k3d cluster delete iff-cluster
+          if [ -z "${SELF_HOSTED_RUNNER}" ]; then
+            bash ./prepare-platform.sh
+          else
+            bash ./prepare-platform-for-self-hosted-runner.sh
+          fi
+        done
+        if [ ${loops} -gt 3 ]; then exit 1; fi
     - name: Setup main repo + subrepos
       shell: bash
       run: |
@@ -58,9 +98,6 @@ jobs:
         if [ -z "${SELF_HOSTED_RUNNER}" ]; then
             cd util && \
             bash setup-ubuntu20.04.sh
-        else
-            make recreate-registry
-            make restart-cluster
         fi
     - name: Build platform
       working-directory: platform-launcher
@@ -112,6 +149,3 @@ jobs:
         done
         echo Agent test return value: ${retval}
         exit ${retval}
-    - name: debug with upterm
-      if: failure()
-      uses: lhotari/action-upterm@v1
