@@ -129,6 +129,7 @@ For examples of how to use the 'oisp-agent' please see the [Examples](https://gi
 ```
  - "SparkplugB":true -> enables the sparkplugB feature of agent
  - "version": "spBv1.0", -> version of spB standard, default is spBv1.0
+ - Don't forget to set device_id and gateway_id (can be same), it is needed by mqtt server to authorize iot-agent device data messages
  
  2.  CID is used as alias, as sparkplugB standard suggest unique id as alias in data metric element.
    Data message looks like below:
@@ -161,6 +162,10 @@ For examples of how to use the 'oisp-agent' please see the [Examples](https://gi
   Datatype can be literals(string, integer,boolean) and iri(string)
 
   Eg. Name: "Property/https://industry-fusion.com/types/v0.9/state"
+
+4. You can send data to agent listening on tcp port using data_submit.js 
+  
+  Eg. examples/data_submit.js Property/https://industry-fusion.com/types/v0.9/state 23
 
 ## Test
 

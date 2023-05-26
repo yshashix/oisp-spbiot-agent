@@ -21,7 +21,7 @@ DATADIR=../../../data
 CONFDIR=../../../config
 ADMIN=../../../oisp-admin.js
 
-echo onboarding with OISP_DEVICE_ACTIVATION_CODE=${OISP_DEVICE_ACTIVATION_CODE} OISP_DEVICE_ID=${OISP_DEVICE_ID} OISP_FORCE_REACTIVATION=${OISP_FORCE_REACTIVATION} OISP_DEVICE_NAME=${OISP_DEVICE_NAME}
+echo onboarding with OISP_DEVICE_ACTIVATION_CODE=${OISP_DEVICE_ACTIVATION_CODE} OISP_DEVICE_ID=${OISP_DEVICE_ID} OISP_FORCE_REACTIVATION=${OISP_FORCE_REACTIVATION} OISP_DEVICE_NAME=${OISP_DEVICE_NAME} OISP_GATEWAY_ID=${OISP_GATEWAY_ID}
 TOKEN=$(cat ${DATADIR}/device.json | jq ".device_token")
 echo Token found: $TOKEN
 if [ -z "$TOKEN" ] || [ "$TOKEN" = "\"\"" ] || [ "$TOKEN" = "false" ] || [ ! -z "$OISP_FORCE_REACTIVATION" ]; then
@@ -37,6 +37,9 @@ if [ -z "$TOKEN" ] || [ "$TOKEN" = "\"\"" ] || [ "$TOKEN" = "false" ] || [ ! -z 
     fi
     if [ ! -z "$OISP_DEVICE_NAME" ]; then
         ${ADMIN} set-device-name $OISP_DEVICE_NAME
+    fi
+    if [ ! -z "$OISP_GATEWAY_ID" ]; then
+	${ADMIN} set-gateway-id $OISP_GATEWAY_ID
     fi
     echo ${ADMIN} activate $OISP_DEVICE_ACTIVATION_CODE
     ${ADMIN} activate $OISP_DEVICE_ACTIVATION_CODE || fail "Could not activate device"
