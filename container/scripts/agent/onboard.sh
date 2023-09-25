@@ -17,6 +17,20 @@ function fail {
     exit 1
 }
 
+# Return: token
+function exchange_onboarding_token() {
+        curl -X POST "${KEYCLOAK_URL}/${NAMESPACE}/protocol/openid-connect/token" \
+            -d "client_id=${ONBOARDING_CLIENT_ID}" \
+            -d "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
+            -d "subject_token=${onboarding_token}" \
+            -d "requested_token_type=urn:ietf:params:oauth:token-type:refresh_token" \
+            -d "audience=${DEVICE_CLIENT_ID}" \
+            -H "X-DeviceID: ${DEVICE_ID}" \
+            -H "X-GatewayID: ${GATEWAY_ID}" \
+            -H "X-Access-Type: device" \
+            | jq ".access_token" | tr -d '"'
+}
+
 DATADIR=../../../data
 CONFDIR=../../../config
 ADMIN=../../../oisp-admin.js
@@ -40,7 +54,10 @@ if [ -z "$TOKEN" ] || [ "$TOKEN" = "\"\"" ] || [ "$TOKEN" = "false" ] || [ ! -z 
     fi
     if [ ! -z "$OISP_GATEWAY_ID" ]; then
 	${ADMIN} set-gateway-id $OISP_GATEWAY_ID
+    else
+        fail "No gateway id given"
     fi
-    echo ${ADMIN} activate $OISP_DEVICE_ACTIVATION_CODE
-    ${ADMIN} activate $OISP_DEVICE_ACTIVATION_CODE || fail "Could not activate device"
+    
+    onboarding_token=$(exchange_onboarding_token) || fail "Could not onboard device"
+    echo onboarding tokern is =$onboarding_token 
 fi

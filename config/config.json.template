@@ -15,17 +15,6 @@
 		"max_size": 134217728
 	},
 	"connector": {
-		"rest": {
-			"host": "127.0.0.1",
-			"port": 4001,
-			"protocol": "http",
-			"strictSSL": false,
-			"timeout": 30000,
-			"proxy": {
-				"host": false,
-				"port": false
-			}
-		},
 		"mqtt": {
 			"host": "127.0.0.1",
 			"port": 8883,
